@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "anikninja/mail-mapper",
   "description": "Dynamic email mapping and notification package for Laravel",
   "type": "library",
@@ -31,4 +32,39 @@
     "issues": "https://github.com/anikninja/mail-mapper/issues",
     "source": "https://github.com/anikninja/mail-mapper"
   }
+=======
+    "name": "anikninja/mail-mapper",
+    "description": "A Laravel package for dynamic, configurable email mapping and notification management.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Anik",
+            "email": "anik89bd@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0",
+        "illuminate/mail": "^10.0|^11.0",
+        "illuminate/queue": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AnikNinja\\MailMapper\\": "src/"
+        },
+        "files": [
+            "src/Helpers/mail_mapping_helper.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AnikNinja\\MailMapper\\MailMapperServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+>>>>>>> 92a265ae051ac49ebefc65d8385bb61f2990989a
 }

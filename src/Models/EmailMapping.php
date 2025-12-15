@@ -4,7 +4,7 @@ namespace AnikNinja\MailMapper\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Modules\Admin\Entities\User;
+use App\Models\User;
 
 class EmailMapping extends Model
 {

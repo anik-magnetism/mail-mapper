@@ -85,26 +85,25 @@ email_mappings
 ### ✅ Using Trait (Recommended)
 
 ```php
-use AnikNinja\MailMapper\Traits\MailMappingNotifier;
+use AnikNinja\MailMapper\Traits\NotifiesByEmailMapping;
 
 class LeadController extends Controller
 {
-    use MailMappingNotifier;
+    use NotifiesByEmailMapping;
 
     public function store(Request $request)
     {
         // Business logic...
 
-        $this->sendMappedNotification(
-            'Sales',
-            'Lead Generation',
-            'Create',
-            [
-                'meta' => [
-                    'actor_name' => auth()->user()->name,
-                    'actor_email' => auth()->user()->email,
-                ]
-            ]
+        $this->notifyByMapping(
+            module: 'Sales',
+            menu: 'Lead Generation',
+            task: 'Create',
+            modelOrContext: $lead, // Lead Model Object or associative array providing context for placeholders.
+            extra: [
+                'custom_note' => 'Urgent lead created'
+            ],
+            useRaw: false
         );
     }
 }
@@ -117,12 +116,55 @@ send_mail_mapping(
     'Lead Generation',
     'Update',
     [
-        'meta' => [
-            'actor_name' => 'Admin'
-        ]
+        'customer_name' => 'Customer 1',
+        'customer_address' => 'Customer Address 1'
     ]
 );
 ```
+
+### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `module` | string | The module name (e.g., `'Sales'`). Supports wildcard (`*`) to match any module. |
+| `menu` | string | The feature or menu name (e.g., `'Lead Generation'`). Supports wildcard (`*`) for flexible mapping. |
+| `task` | string | The action or event name (e.g., `'Create'`, `'Update'`). Supports wildcard (`*`) for generic or fallback templates. |
+| `modelOrContext` | `Model` &#124; `array` | An Eloquent model or associative array providing context for placeholders. |
+| `extra` | array *(optional)* | Additional data to merge into the context. |
+| `useRaw` | bool *(optional)* | If `true`, bypasses mapping and sends a raw email directly. |
+
+### 🔹 Wildcard Matching
+
+The **Module**, **Menu**, and **Task** parameters support the `*` wildcard to allow flexible mapping rules:
+
+| Example | Description |
+|----------|-------------|
+| `module: '*'` | Matches any module (used as a global fallback). |
+| `menu: '*'` | Matches any feature or menu within the specified module. |
+| `task: '*'` | Matches all actions or events for a given module and menu. |
+| `module: 'Sales', menu: '*', task: 'Create'` | Matches all “Create” actions under the Sales module, regardless of feature. |
+
+Wildcard support allows you to define **general-purpose email templates** that apply to multiple actions or modules — reducing redundancy and centralizing notification management.
+
+## ⚙️ How It Works
+
+### 1. Context Extraction
+Builds a unified context array from the provided model or array, merging any extra data.
+
+### 2. Meta Placeholder Management
+Extracts all placeholders used in templates and stores them in the mapping’s meta field if not already present.
+
+### 3. Recipient & Template Resolution
+Uses `EmailMappingService` to resolve recipients, subject, and body dynamically, applying context placeholders.
+
+### 4. Email Dispatch
+Dispatches the fully rendered email through `SendEmailNotificationJob` for queued or asynchronous delivery.
+
+## 🗒️ Notes
+
+- Ensure your **`EmailMapping`** model and database table are properly configured to store **mapping definitions** and **meta placeholders**.  
+- Placeholders in templates (e.g., `{client_name}`) are automatically replaced with values from the provided context.  
+- `{actor_name}` and `{actor_email}` are injected automatically when an authenticated user exists.  
 
 ## 📨 Email Sending Strategy
 

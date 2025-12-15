@@ -66,18 +66,18 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">@config('app.name') Notification</div>
+        <div class="header">{{ env('APP_NAME') }} Notification</div>
         <div class="divider"></div>
         <div class="content">
             {!! $bodyContent !!}
         </div>
         <div class="footer">
             <p>
-                <span>This is an automated email from @config('app.name').</span>
+                <span>This is an automated email from {{ env('APP_NAME') }}.</span>
                 <br>
-                <span>© {{ date('Y') }} @config('app.name'). All rights reserved.</span>
+                <span>© {{ date('Y') }} {{ env('APP_NAME') }}. All rights reserved.</span>
             </p>
         </div>
-  </div>
+    </div>
 </body>
 </html>

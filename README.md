@@ -49,10 +49,21 @@ config/mail-mapper.php
 Example:
 ```php
 return [
-    'default_from_address' => env('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
-    'default_from_name' => env('MAIL_FROM_NAME', 'No Reply'),
-    'enable_logging' => true,
+    'default_from' => [
+        'address' => env('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
+        'name' => env('MAIL_FROM_NAME', 'No Reply'),
+    ],
+    'use_raw_fallback' => env('MAIL_MAPPER_USE_RAW_FALLBACK', true),
+    'enable_logging' => env('MAIL_MAPPER_ENABLE_LOGGING', true),
 ];
+```
+
+or this config is usable in env file
+```bash
+MAIL_FROM_ADDRESS="no-reply@example.com" # Default "from" email address for outgoing emails
+MAIL_FROM_NAME="No Reply"                # Default "from" name for outgoing emails
+MAIL_MAPPER_USE_RAW_FALLBACK=true        # Enable/disable raw email sending fallback (true/false)
+MAIL_MAPPER_ENABLE_LOGGING=true          # Enable/disable logging of email attachment info (true/false)
 ```
 
 ## 🧠 Core Concepts
@@ -122,6 +133,53 @@ send_mail_mapping(
 );
 ```
 
+### Attachments
+
+Pass attachments via the `$extra` parameter or the model context when calling `notifyByMapping(...)`.
+
+Supported formats:
+
+- In-memory attachment (array with `filename`, `content`, `mime`):
+
+```php
+['attachments' => [
+    [
+        'filename' => 'file.pdf',
+        'content' => file_get_contents($path),
+        'mime' => 'application/pdf',
+    ],
+]]
+```
+
+- File path (server file path or stored temporary file):
+
+```php
+['attachments' => ['/full/path/to/file.pdf']]
+```
+
+- Uploaded file (from a request):
+
+```php
+['attachments' => [$request->file('upload')]]
+```
+
+Example usage:
+
+```php
+$this->notifyByMapping(
+    'Sales',
+    'Leads',
+    'Create',
+    $model,
+    ['attachments' => ['/path/to/invoice.pdf']]
+);
+```
+
+Notes:
+
+- The trait will normalize attachments and prefer path-based `attach()` to avoid loading large files into memory.
+- Prefer passing file paths or `UploadedFile` instances for large files.
+
 ### Parameters
 
 | Name | Type | Description |
@@ -130,7 +188,7 @@ send_mail_mapping(
 | `menu` | string | The feature or menu name (e.g., `'Lead Generation'`). Supports wildcard (`*`) for flexible mapping. |
 | `task` | string | The action or event name (e.g., `'Create'`, `'Update'`). Supports wildcard (`*`) for generic or fallback templates. |
 | `modelOrContext` | `Model` &#124; `array` | An Eloquent model or associative array providing context for placeholders. |
-| `extra` | array *(optional)* | Additional data to merge into the context. |
+| `extra` | array *(optional)* | Additional data (like: url, attachments) to merge into the context. |
 | `useRaw` | bool *(optional)* | If `true`, bypasses mapping and sends a raw email directly. |
 
 ### 🔹 Wildcard Matching
@@ -185,7 +243,7 @@ SendEmailNotificationJob::dispatch([
 
 Default template:
 ```swift
-resources/views/vendor/mail-mapper/mail/dynamic_notification.blade.php
+resources/views/mail/dynamic_notification.blade.php
 ```
 
 To customize:

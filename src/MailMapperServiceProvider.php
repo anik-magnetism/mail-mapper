@@ -22,7 +22,7 @@ class MailMapperServiceProvider extends ServiceProvider
         ], 'config');
 
         $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/mailmapper'),
+            __DIR__ . '/../resources/views' => resource_path('views'),
         ], 'views');
 
         $this->publishes([

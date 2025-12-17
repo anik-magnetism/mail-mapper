@@ -2,7 +2,7 @@
 
 namespace AnikNinja\MailMapper\Services;
 
-use App\Models\EmailMapping;
+use AnikNinja\MailMapper\Models\EmailMapping;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 

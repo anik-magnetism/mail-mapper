@@ -10,6 +10,8 @@
  * After publishing, you can modify the settings as needed.
  */
 
+use PSpell\Config;
+
 return [
     // Default "from" address and name for outgoing emails
     /** 
@@ -37,4 +39,11 @@ return [
      * Defaults to true.
      */
     'enable_logging' => env('MAIL_MAPPER_ENABLE_LOGGING', true),
+
+    // User model for relations
+    /**
+     * Specify the User model class used in the application.
+     * This is used for relationships in the EmailMapping model.
+     */
+    'user_model' => config('auth.providers.users.model', \App\Models\User::class), // Change default as needed
 ];

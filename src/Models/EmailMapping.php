@@ -4,7 +4,6 @@ namespace AnikNinja\MailMapper\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\User;
 
 class EmailMapping extends Model
 {
@@ -32,7 +31,7 @@ class EmailMapping extends Model
 
     public function updatedBy()
     {
-        return $this->belongsTo(User::class, 'last_updated_by');
+        return $this->belongsTo(config('mail-mapper.user_model'), 'last_updated_by');
     }
 
     /**

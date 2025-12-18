@@ -10,19 +10,52 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 use Symfony\Component\Mime\Part\TextPart;
 
+/**
+ * Class SendEmailNotificationJob
+ *
+ * Handles the asynchronous sending of dynamic notification emails with support for:
+ * - Raw and Mailable-based sending strategies
+ * - Attachments (file paths, in-memory, URLs, UploadedFile)
+ * - Logging and error handling
+ * - Fallback to raw sending if Mailable fails (configurable)
+ *
+ * Usage:
+ *   dispatch(new SendEmailNotificationJob($emailData));
+ *
+ * $emailData array structure:
+ *   - 'to'         => array of recipient emails
+ *   - 'cc'         => array of CC emails
+ *   - 'subject'    => string
+ *   - 'body'       => string (HTML)
+ *   - 'meta'       => array (optional, for template context)
+ *   - 'attachments'=> array (optional, see below)
+ *   - 'use_raw'    => bool (optional, force raw mode)
+ *
+ * Attachments can be:
+ *   - ['path' => '/path/to/file', 'filename' => '...', 'mime' => '...']
+ *   - ['content' => '...', 'filename' => '...', 'mime' => '...']
+ *   - ['url' => 'https://...', 'filename' => '...']
+ *   - UploadedFile instances (normalized before job)
+ */
 class SendEmailNotificationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
-     * Create a new job instance.
-     *
-     * @return void
+     * The email data payload.
+     * @var array
      */
     public $emailData;
 
+    /**
+     * Create a new job instance.
+     *
+     * @param array $emailData  Email data and options (see class doc)
+     * @return void
+     */
     public function __construct(array $emailData)
     {
         $this->emailData = $emailData;
@@ -30,6 +63,14 @@ class SendEmailNotificationJob implements ShouldQueue
 
     /**
      * Execute the job.
+     *
+     * Handles:
+     * - Downloading URL attachments to temp files
+     * - Logging attachment info if enabled
+     * - Choosing between raw and Mailable sending
+     * - Attaching files by path or in-memory content
+     * - Fallback to raw mode if Mailable fails (configurable)
+     * - Cleans up temp files after sending
      *
      * @return void
      */
@@ -46,6 +87,43 @@ class SendEmailNotificationJob implements ShouldQueue
 
             $fromAddress = config('mail-mapper.default_from.address', 'no-reply@bbts.net');
             $fromName = config('mail-mapper.default_from.name', 'No Reply');
+
+            // Fetch any URL attachments to temporary files so they can be attached
+            $tempFiles = [];
+            if (!empty($attachments) && is_array($attachments)) {
+                foreach ($attachments as $idx => $att) {
+                    if (!empty($att['url']) && empty($att['path']) && empty($att['content'])) {
+                        try {
+                            $url = $att['url'];
+                            $resp = Http::withOptions(['verify' => false])->get($url);
+                            if ($resp->successful()) {
+                                $content = $resp->body();
+                                $filename = $att['filename'] ?? basename(parse_url($url, PHP_URL_PATH));
+                                $tmp = tempnam(sys_get_temp_dir(), 'mailmap_');
+                                $tmp2 = $tmp . '_' . $filename;
+                                // rename temp file to preserve extension
+                                if (rename($tmp, $tmp2)) {
+                                    file_put_contents($tmp2, $content);
+                                } else {
+                                    file_put_contents($tmp, $content);
+                                    $tmp2 = $tmp;
+                                }
+                                $attachments[$idx]['path'] = $tmp2;
+                                $attachments[$idx]['filename'] = $filename;
+                                if (function_exists('finfo_open')) {
+                                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                                    $attachments[$idx]['mime'] = finfo_file($finfo, $tmp2);
+                                    finfo_close($finfo);
+                                }
+                                $tempFiles[] = $tmp2;
+                            }
+                        } catch (\Throwable $e) {
+                            // ignore single attachment failure
+                            continue;
+                        }
+                    }
+                }
+            }
 
             // Log attachments info for debugging (filename, size, mime)
             if (!empty($attachments) && is_array($attachments) && config('mail-mapper.enable_logging')) {
@@ -188,6 +266,17 @@ class SendEmailNotificationJob implements ShouldQueue
                     'to' => $to,
                     'cc' => $cc,
                 ]);
+            }
+
+            // cleanup any temporary files we created for url attachments
+            if (!empty($tempFiles)) {
+                foreach ($tempFiles as $f) {
+                    try {
+                        @unlink($f);
+                    } catch (\Throwable $e) {
+                        // ignore cleanup errors
+                    }
+                }
             }
         } catch (\Throwable $e) {
             Log::error('Failed to send notification email: ' . $e->getMessage(), [

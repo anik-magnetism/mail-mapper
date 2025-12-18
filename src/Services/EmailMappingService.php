@@ -6,6 +6,21 @@ use AnikNinja\MailMapper\Models\EmailMapping;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Class EmailMappingService
+ *
+ * Provides methods to resolve, cache, and process dynamic email mappings for notifications.
+ * - Retrieves mapping templates based on module, menu, and task (with wildcard fallback).
+ * - Applies context variables to email templates and recipient lists.
+ * - Normalizes and validates email addresses.
+ * - Handles caching for performance.
+ * - Supports meta placeholder extraction and cache clearing.
+ *
+ * Typical usage:
+ *   $service = app(EmailMappingService::class);
+ *   $emailData = $service->getEmailData('Sales', 'Leads', 'Create', ['client_name' => 'Acme']);
+ *   // $emailData: ['to'=>[], 'cc'=>[], 'subject'=>'', 'body'=>'', 'mapping_id'=>...]
+ */
 class EmailMappingService
 {
     protected const CACHE_TTL = 259200; // 72 hours (in seconds)
@@ -14,11 +29,12 @@ class EmailMappingService
     /**
      * Get email data based on module, menu, task, and context.
      * Returns null if no active mapping or no valid recipients.
-     * @param string $module
-     * @param string $menu
-     * @param string $task
-     * @param array $context
-     * @return array|null
+     *
+     * @param string $module   The module name (e.g. 'Sales')
+     * @param string $menu     The menu or section (e.g. 'Lead Generation')
+     * @param string $task     The task or action (e.g. 'Create', 'Update')
+     * @param array  $context  Context variables for template placeholders and recipients
+     * @return array|null      ['to'=>[], 'cc'=>[], 'subject'=>'', 'body'=>'', 'mapping_id'=>...] or null
      */
     public function getEmailData(string $module, string $menu, string $task, array $context = []): ?array
     {
@@ -60,6 +76,12 @@ class EmailMappingService
 
     /**
      * Cached resolver for mapping template (no context applied).
+     * Returns the EmailMapping model or null.
+     *
+     * @param string $module
+     * @param string $menu
+     * @param string $task
+     * @return EmailMapping|null
      */
     protected function cachedResolveMapping(string $module, string $menu, string $task)
     {
@@ -78,6 +100,7 @@ class EmailMappingService
     /**
      * Find the most specific active mapping based on module, menu, and task.
      * Fallback to wildcards as needed.
+     *
      * @param string $module
      * @param string $menu
      * @param string $task
@@ -115,6 +138,7 @@ class EmailMappingService
 
     /**
      * Replace placeholders in the format {key} with values from context.
+     *
      * @param string $text
      * @param array $context
      * @return string
@@ -128,6 +152,7 @@ class EmailMappingService
 
     /**
      * Apply placeholders to each string in the array.
+     *
      * @param array $arr
      * @param array $context
      * @return array
@@ -141,9 +166,8 @@ class EmailMappingService
 
     /**
      * Normalize and validate email addresses from an array of strings.
-     * Removes duplicates and empty entries.
-     * Validates email format.
-     * Logs warnings for invalid emails.
+     * Removes duplicates and empty entries. Logs warnings for invalid emails.
+     *
      * @param array $emails
      * @return array
      */
@@ -165,8 +189,8 @@ class EmailMappingService
      * Build context array from an Eloquent model using its fillable attributes.
      * Includes id, created_at and updated_at automatically and merges any $extra keys.
      *
-     * @param  object|mixed  $model
-     * @param  array  $extra
+     * @param  object|mixed  $model  Eloquent model or array
+     * @param  array  $extra         Additional context variables
      * @return array
      */
     public function contextFromModel($model, array $extra = []): array
@@ -200,7 +224,9 @@ class EmailMappingService
     }
 
     /**
-     * Generate placeholder keys from an Eloquent model's attributes.
+     * Generate placeholder keys from an Eloquent model's attributes or context array.
+     * Returns an array of strings in the format {key}.
+     *
      * @param mixed $context
      * @return array
      */
@@ -211,6 +237,7 @@ class EmailMappingService
 
     /**
      * Generate a cache key for the given module, menu, and task.
+     *
      * @param string $module
      * @param string $menu
      * @param string $task
@@ -224,6 +251,7 @@ class EmailMappingService
     /**
      * Clear cache entries related to a specific email mapping.
      * Should be called after creating, updating, or deleting a mapping.
+     *
      * @param EmailMapping $mapping
      * @return void
      */

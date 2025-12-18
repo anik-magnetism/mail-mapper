@@ -49,12 +49,13 @@ config/mail-mapper.php
 Example:
 ```php
 return [
-    'default_from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'No Reply'),
+    'default_from'  => [
+            'address'   => env('MAIL_FROM_ADDRESS', 'no-reply@example.com'),
+            'name'      => env('MAIL_FROM_NAME', 'No Reply'),
     ],
-    'use_raw_fallback' => env('MAIL_MAPPER_USE_RAW_FALLBACK', true),
-    'enable_logging' => env('MAIL_MAPPER_ENABLE_LOGGING', true),
+    'use_raw_fallback'  => env('MAIL_MAPPER_USE_RAW_FALLBACK', true),
+    'enable_logging'    => env('MAIL_MAPPER_ENABLE_LOGGING', true),
+    'user_model'        => config('auth.providers.users.model', \App\Models\User::class), // Change default as needed
 ];
 ```
 

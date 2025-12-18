@@ -5,24 +5,54 @@ namespace AnikNinja\MailMapper\Traits;
 use AnikNinja\MailMapper\Services\EmailMappingService;
 use AnikNinja\MailMapper\Jobs\SendEmailNotificationJob;
 use AnikNinja\MailMapper\Models\EmailMapping;
+use AnikNinja\MailMapper\Services\AttachmentNormalizer;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Trait NotifiesByEmailMapping
+ *
+ * Provides a convenient method to trigger dynamic email notifications using the Mail Mapper system.
+ * Handles context extraction, meta placeholder management, attachment normalization, and job dispatching.
+ *
+ * Usage:
+ *   $this->notifyByMapping('Sales', 'Leads', 'Create', $model, [
+ *       'attachments' => [
+ *           '/path/to/file.pdf',
+ *           $request->file('upload'),
+ *           ['filename' => 'a.txt', 'content' => 'Hello', 'mime' => 'text/plain'],
+ *       ],
+ *       'custom_var' => 'value'
+ *   ]);
+ */
 trait NotifiesByEmailMapping
 {
     /**
      * Notify via email mapping and ensure meta placeholders are stored if not already present.
-     * Will dispatch a job to send the email asynchronously.
-     * Attachments can be provided via extra['attachments'] as an array.
-     * Also supports forcing raw email sending via $useRaw parameter.
-     * And logs email sending activity.
+     * Dispatches a job to send the email asynchronously.
      *
-     * @param  string  $module   e.g. 'Sales'
-     * @param  string  $menu     e.g. 'Lead Generation'
-     * @param  string  $task     e.g. 'Create', 'Update'
-     * @param  mixed   $modelOrContext  Eloquent model or context array
-     * @param  array   $extra    Additional context data to merge like: attachments, urls, etc.
-     * @param  bool    $useRaw   Force raw email sending (true/false)
-     * @return bool
+     * Attachments can be provided via $extra['attachments'] as:
+     *   - Array of file paths (strings)
+     *   - UploadedFile instances (Laravel/Symfony)
+     *   - Arrays with 'filename' and 'content' (in-memory)
+     *   - URLs (strings, will be passed as 'url' for later download)
+     *
+     * @param  string  $module   The module name (e.g. 'Sales')
+     * @param  string  $menu     The menu or section (e.g. 'Lead Generation')
+     * @param  string  $task     The task or action (e.g. 'Create', 'Update')
+     * @param  mixed   $modelOrContext  Eloquent model or associative array for context variables
+     * @param  array   $extra    Additional context data (merged into context, e.g. attachments, custom vars)
+     * @param  bool    $useRaw   If true, forces raw email sending (bypasses Mailable)
+     * @return bool    True if the notification was dispatched, false otherwise
+     *
+     * @example
+     *   $this->notifyByMapping('HR', 'Onboarding', 'Welcome', $user, [
+     *       'attachments' => [
+     *           '/path/to/contract.pdf',
+     *           $request->file('resume'),
+     *           ['filename' => 'hello.txt', 'content' => 'Hi', 'mime' => 'text/plain'],
+     *       ],
+     *       'custom_var' => 'value'
+     *   ]);
      */
     public function notifyByMapping(string $module, string $menu, string $task, $modelOrContext = [], array $extra = [], bool $useRaw = false): bool
     {
@@ -62,7 +92,7 @@ trait NotifiesByEmailMapping
                 'subject' => $emailData['subject'] ?? 'Notification',
                 'body' => $emailData['body'] ?? '',
                 'meta' => $meta,
-                'attachments' => $this->normalizeAttachments($context['attachments'] ?? []),
+                'attachments' => AttachmentNormalizer::normalize($context['attachments'] ?? []),
                 'use_raw' => $useRaw,
             ];
 
@@ -80,76 +110,6 @@ trait NotifiesByEmailMapping
             ]);
             return false;
         }
-    }
-
-    /**
-     * Normalize attachments into arrays with filename, content and mime.
-     * Accepts:
-     * - array of ['filename'=>..., 'content'=>..., 'mime'=>...] (kept as-is)
-     * - array of local file paths (string) or ['path' => '/abs/path']
-     * - UploadedFile instances
-     * Returns only valid attachments; invalid entries are skipped.
-     *
-     * @param array $attachments
-     * @return array
-     */
-    protected function normalizeAttachments(array $attachments): array
-    {
-        $out = [];
-
-        foreach ($attachments as $att) {
-            try {
-                // Already normalized
-                if (is_array($att) && isset($att['content']) && isset($att['filename'])) {
-                    $out[] = [
-                        'filename' => $att['filename'],
-                        'content' => $att['content'],
-                        'mime' => $att['mime'] ?? null,
-                    ];
-                    continue;
-                }
-
-                // UploadedFile / Symfony UploadedFile - preserve path to avoid loading into memory
-                if (function_exists('is_a') && (is_object($att) && (is_a($att, \Illuminate\Http\UploadedFile::class) || is_a($att, \Symfony\Component\HttpFoundation\File\UploadedFile::class)))) {
-                    $path = $att->getRealPath();
-                    if ($path && file_exists($path)) {
-                        $out[] = [
-                            'path' => $path,
-                            'filename' => $att->getClientOriginalName() ?: basename($path),
-                            'mime' => $att->getClientMimeType() ?? null,
-                        ];
-                    }
-                    continue;
-                }
-
-                // Array with path key
-                if (is_array($att) && isset($att['path']) && is_string($att['path']) && file_exists($att['path'])) {
-                    $out[] = [
-                        'path' => $att['path'],
-                        'filename' => $att['filename'] ?? basename($att['path']),
-                        'mime' => $att['mime'] ?? (function_exists('mime_content_type') ? mime_content_type($att['path']) : null),
-                    ];
-                    continue;
-                }
-
-                // String path
-                if (is_string($att) && file_exists($att)) {
-                    $out[] = [
-                        'path' => $att,
-                        'filename' => basename($att),
-                        'mime' => function_exists('mime_content_type') ? mime_content_type($att) : null,
-                    ];
-                    continue;
-                }
-
-                // Skip anything else
-            } catch (\Throwable $e) {
-                // skip malformed attachment entries
-                continue;
-            }
-        }
-
-        return $out;
     }
 
     /**

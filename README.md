@@ -59,12 +59,43 @@ return [
 ];
 ```
 
-or this config is usable in env file
+### Authorization Configuration
+
+The package provides configurable authorization options for the API and management UI. After publishing `config/mail-mapper.php` you can set the following under the `authorization` key (or via env variables):
+
+- `roles` — array of role names allowed to manage mappings (supports `spatie/laravel-permission` methods like `hasRole`/`hasAnyRole`). Can be set via `MAIL_MAPPER_AUTH_ROLES=admin,super-admin`.
+- `permissions` — array of permission/gate names to check via `$user->can('permission')` (e.g. `['email-mapping-configure']`).
+- `allow_super_admin` — boolean fallback to allow `super-admin` role or `super-admin-only` permission (defaults to `true`).
+- `default_allow` — boolean default if no roles/permissions match (defaults to `false`).
+
+Example configuration:
+
+```php
+'authorization' => [
+    'roles' => ['admin','super-admin'],
+    'permissions' => ['email-mapping-configure'],
+    'allow_super_admin' => true,
+    'default_allow' => false,
+],
+```
+
+Notes:
+
+- The package registers a default `EmailMappingPolicy` that respects these settings. Host applications can override the policy or adjust these config values after publishing.
+- This approach makes authorization flexible across different auth/permission packages and app conventions.
+
+### 🗒️ ENV Example:
 ```bash
-MAIL_FROM_ADDRESS="no-reply@example.com" # Default "from" email address for outgoing emails
-MAIL_FROM_NAME="No Reply"                # Default "from" name for outgoing emails
-MAIL_MAPPER_USE_RAW_FALLBACK=true        # Enable/disable raw email sending fallback (true/false)
-MAIL_MAPPER_ENABLE_LOGGING=true          # Enable/disable logging of email attachment info (true/false)
+MAIL_FROM_ADDRESS="no-reply@example.com"    # Default "from" email address for outgoing emails
+MAIL_FROM_NAME="No Reply"                   # Default "from" name for outgoing emails
+MAIL_MAPPER_USE_RAW_FALLBACK=true           # Enable/disable raw email sending fallback (true/false)
+MAIL_MAPPER_ENABLE_LOGGING=true             # Enable/disable logging of email attachment info (true/false)
+MAIL_MAPPER_API_PREFIX="api"                # The route prefix for all API routes.
+MAIL_MAPPER_API_VERSION="v1"                # Optional version segment for the API routes. It can be set as null
+MAIL_MAPPER_API_PER_PAGE=10                 # Default pagination size for listing endpoints
+MAIL_MAPPER_API_MAX_PER_PAGE=100            # Maximum allowed pagination size to prevent abuse.
+MAIL_MAPPER_AUTH_ROLES=admin,super-admin    # User roles that are allowed to manage email mappings. (e.g. admin,super-admin).
+MAIL_MAPPER_ALLOW_SUPER_ADMIN=true          # Allow users with 'super-admin' role or permission by default.
 ```
 
 ## 🧠 Core Concepts

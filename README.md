@@ -268,6 +268,70 @@ Recommended drivers:
 - redis
 - supervisor (production)
 
+## ⚙️ **API**
+
+The package exposes a simple CRUD API for managing email mappings. Routes are published under the configured API prefix (default: `/api`) and are protected by middleware defined in `config/mail-mapper.php`.
+
+Default endpoints (prefix may include version if configured):
+
+- GET  `/email-mappings` — List mappings. Supports `?per_page=` pagination.
+- GET  `/email-mappings/{id}` — Get a single mapping.
+- POST `/email-mappings` — Create mapping (returns 201).
+- PUT  `/email-mappings/{id}` — Update mapping.
+- DELETE `/email-mappings/{id}` — Delete mapping.
+
+Authentication & Authorization:
+
+- Routes are protected by the middleware defined in `config('mail-mapper.api.middleware')` (default `['api','auth:api']`).
+- The package provides a default `EmailMappingPolicy` (registered by the service provider). Host applications should register permissions (for example `email-mapping-configure`) or override the policy to customize access control.
+
+Example: Create mapping (cURL)
+
+```bash
+curl -X POST https://your-app.test/api/email-mappings \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "module":"Sales",
+        "menu":"Leads",
+        "task":"Create",
+        "to":["ops@example.com"],
+        "cc":["manager@example.com"],
+        "subject":"New lead",
+        "body":"<p>Hello {client_name}</p>",
+        "is_active": true
+    }'
+```
+
+Response example (201 Created):
+
+```json
+{
+    "message": "Email Mapping created successfully.",
+    "data": {
+        "id": 1,
+        "module": "Sales",
+        "menu": "Leads",
+        "task": "Create",
+        "to": ["ops@example.com"],
+        "cc": ["manager@example.com"],
+        "subject": "New lead",
+        "body": "<p>Hello {client_name}</p>",
+        "is_active": true,
+        "meta": [],
+        "last_updated_by": null,
+        "created_at": "2025-10-20T12:34:56Z",
+        "updated_at": "2025-10-20T12:34:56Z"
+    }
+}
+```
+
+Notes:
+
+- The list endpoint supports `?per_page=`; the default and maximum values are configurable via `config('mail-mapper.api.per_page')` and `config('mail-mapper.api.max_per_page')`.
+- Protect the endpoints using your preferred auth middleware (Sanctum, Passport, or `auth:api`) by publishing and editing `config/mail-mapper.php`.
+- Consider applying rate-limiting middleware (`throttle`) in your host application for public APIs.
+
 ## 🧰 Troubleshooting
 |Issue	                    |Solution|
 |:----                      |:-------|
@@ -275,7 +339,7 @@ Recommended drivers:
 |Job not running            |Run queue worker|
 |Template not rendering	    |Publish views|
 |SMTP rejects HTML	        |Enable use_raw|
-#
+
 ## 🧾 Summary
 
 Mail Mapper is a standalone Laravel package that provides a dynamic, database-driven email notification system for modular applications.

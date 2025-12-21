@@ -5,6 +5,9 @@ namespace AnikNinja\MailMapper;
 use AnikNinja\MailMapper\Contracts\EmailMappingRepositoryContract;
 use AnikNinja\MailMapper\Repositories\EmailMappingRepository;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use AnikNinja\MailMapper\Models\EmailMapping;
+use AnikNinja\MailMapper\Policies\EmailMappingPolicy;
 
 /**
  * Class MailMapperServiceProvider
@@ -44,6 +47,9 @@ class MailMapperServiceProvider extends ServiceProvider
     {
         // Load API routes
         $this->loadRoutesFrom(__DIR__ . '/routes/api.php');
+
+        // Register default policy so host apps can override or extend permissions
+        Gate::policy(EmailMapping::class, EmailMappingPolicy::class);
 
         // Migrations, views & config publish
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');

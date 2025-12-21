@@ -46,4 +46,21 @@ return [
      * This is used for relationships in the EmailMapping model.
      */
     'user_model' => config('auth.providers.users.model', \App\Models\User::class), // Change default as needed
+
+    // API settings for the package routes
+    /**
+     * Configuration settings for the Mail Mapper API routes.
+     * - 'prefix': The route prefix for all API routes.
+     * - 'version': Optional version segment for the API routes.
+     * - 'middleware': Middleware applied to the API routes.
+     * - 'per_page': Default pagination size for listing endpoints.
+     * - 'max_per_page': Maximum allowed pagination size to prevent abuse.
+     */
+    'api' => [
+        'prefix' => env('MAIL_MAPPER_API_PREFIX', 'api'),
+        'version' => env('MAIL_MAPPER_API_VERSION', null),
+        'middleware' => ['api', 'auth:api'],
+        'per_page' => env('MAIL_MAPPER_API_PER_PAGE', 15),
+        'max_per_page' => env('MAIL_MAPPER_API_MAX_PER_PAGE', 100),
+    ],
 ];

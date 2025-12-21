@@ -13,7 +13,17 @@ class EmailMappingApiService
 
     public function list()
     {
-        return $this->repository->all();
+        // Support pagination via ?per_page= param. If per_page is omitted or set to 0, return all records.
+        $perPage = (int) request()->query('per_page', config('mail-mapper.api.per_page', 15));
+        $maxPerPage = (int) config('mail-mapper.api.max_per_page', 100);
+
+        if ($perPage <= 0) {
+            return $this->repository->all();
+        }
+
+        $perPage = min(max(1, $perPage), $maxPerPage);
+
+        return EmailMapping::latest()->paginate($perPage);
     }
 
     public function show(int $id): EmailMapping

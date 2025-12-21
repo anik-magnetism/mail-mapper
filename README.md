@@ -360,6 +360,11 @@ Response example (201 Created):
 Notes:
 
 - The list endpoint supports `?per_page=`; the default and maximum values are configurable via `config('mail-mapper.api.per_page')` and `config('mail-mapper.api.max_per_page')`.
+
+- The package includes an OpenAPI 3 specification at the project root: `openapi.yaml`.
+
+- To import into Postman: open Postman -> Import -> File -> select `openapi.yaml`.
+
 - Protect the endpoints using your preferred auth middleware (Sanctum, Passport, or `auth:api`) by publishing and editing `config/mail-mapper.php`.
 - Consider applying rate-limiting middleware (`throttle`) in your host application for public APIs.
 

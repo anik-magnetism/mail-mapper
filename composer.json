@@ -27,6 +27,8 @@
         "AnikNinja\\MailMapper\\MailMapperServiceProvider"
       ]
     }
+    ,
+    "openapi": "openapi.yaml"
   },
   "keywords": [
     "laravel",

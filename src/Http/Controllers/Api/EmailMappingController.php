@@ -8,7 +8,6 @@ use AnikNinja\MailMapper\Http\Requests\StoreEmailMappingRequest;
 use AnikNinja\MailMapper\Http\Requests\UpdateEmailMappingRequest;
 use AnikNinja\MailMapper\Http\Resources\EmailMappingResource;
 
-
 class EmailMappingController extends Controller
 {
     public function __construct(
@@ -24,44 +23,79 @@ class EmailMappingController extends Controller
 
     public function show(int $id)
     {
-        return new EmailMappingResource(
-            $this->service->show($id)
-        );
+        try {
+            return new EmailMappingResource(
+                $this->service->show($id)
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(
+                [
+                    'message' => $e->getMessage(),
+                ],
+                422
+            );
+        }
     }
 
     public function store(StoreEmailMappingRequest $request)
     {
-        return response()->json(
-            [
-                'message' => 'Email Mapping created successfully.',
-                'data' => new EmailMappingResource(
-                    $this->service->create($request->validated())
-                ),
-            ],
-            201
-        );
+        try {
+            return response()->json(
+                [
+                    'message' => 'Email Mapping created successfully.',
+                    'data' => new EmailMappingResource(
+                        $this->service->create($request->validated())
+                    ),
+                ],
+                201
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(
+                [
+                    'message' => $e->getMessage(),
+                ],
+                422
+            );
+        }
     }
 
     public function update(UpdateEmailMappingRequest $request, int $id)
     {
-        return response()->json(
-            [
-                'message' => 'Email Mapping updated successfully.',
-                'data' => new EmailMappingResource(
-                    $this->service->update($id, $request->validated())
-                ),
-            ]
-        );
+        try {
+            return response()->json(
+                [
+                    'message' => 'Email Mapping updated successfully.',
+                    'data' => new EmailMappingResource(
+                        $this->service->update($id, $request->validated())
+                    ),
+                ]
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(
+                [
+                    'message' => $e->getMessage(),
+                ],
+                422
+            );
+        }
     }
 
     public function destroy(int $id)
     {
-        $this->service->delete($id);
-
-        return response()->json(
-            [
-                'message' => 'Email Mapping deleted successfully.',
-            ]
-        );
+        try {
+            $this->service->delete($id);
+            return response()->json(
+                [
+                    'message' => 'Email Mapping deleted successfully.',
+                ]
+            );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(
+                [
+                    'message' => $e->getMessage(),
+                ],
+                422
+            );
+        }
     }
 }

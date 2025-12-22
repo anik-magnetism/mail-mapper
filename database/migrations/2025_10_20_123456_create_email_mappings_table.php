@@ -50,7 +50,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['module', 'menu', 'task']);
+            $table->index(['module', 'menu', 'task'], 'idx_module_menu_task');
+            $table->unique(['module', 'menu', 'task'], 'unique_module_menu_task');
         });
     }
 

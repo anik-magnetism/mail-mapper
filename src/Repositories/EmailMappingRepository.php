@@ -55,6 +55,7 @@ class EmailMappingRepository implements EmailMappingRepositoryContract
             throw new \InvalidArgumentException($this->error_message['not_exist']);
         }
 
+        $data['last_updated_by'] = auth()->id();
         $mapping->update($data);
 
         return $mapping;

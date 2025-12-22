@@ -2,7 +2,12 @@
 
 namespace AnikNinja\MailMapper;
 
+use AnikNinja\MailMapper\Contracts\EmailMappingRepositoryContract;
+use AnikNinja\MailMapper\Repositories\EmailMappingRepository;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Gate;
+use AnikNinja\MailMapper\Models\EmailMapping;
+use AnikNinja\MailMapper\Policies\EmailMappingPolicy;
 
 /**
  * Class MailMapperServiceProvider
@@ -26,6 +31,11 @@ class MailMapperServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/mail-mapper.php', 'mail-mapper');
+
+        $this->app->singleton(
+            EmailMappingRepositoryContract::class,
+            EmailMappingRepository::class
+        );
     }
 
     /**
@@ -35,18 +45,27 @@ class MailMapperServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Load API routes
+        $this->loadRoutesFrom(__DIR__ . '/routes/api.php');
+
+        // Register default policy so host apps can override or extend permissions
+        Gate::policy(EmailMapping::class, EmailMappingPolicy::class);
+
         // Migrations, views & config publish
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'mailmapper');
 
+        // Publishable config file
         $this->publishes([
             __DIR__ . '/../config/mail-mapper.php' => config_path('mail-mapper.php'),
         ], 'config');
 
+        // Publish views
         $this->publishes([
             __DIR__ . '/../resources/views' => resource_path('views'),
         ], 'views');
 
+        // Publish migrations
         $this->publishes([
             __DIR__ . '/../database/migrations/' => database_path('migrations'),
         ], 'migrations');

@@ -1,0 +1,97 @@
+{
+  "info": {
+    "name": "Mail Mapper API",
+    "_postman_id": "b1f3c2f0-0000-4000-8000-000000000000",
+    "description": "Postman collection for Mail Mapper Email Mapping CRUD endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Email Mappings",
+      "item": [
+        {
+          "name": "List Email Mappings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/email-mappings?per_page={{per_page}}&page={{page}}",
+              "host": [ "{{base_url}}" ],
+              "path": [ "api", "email-mappings" ],
+              "query": [
+                { "key": "per_page", "value": "15" },
+                { "key": "page", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Email Mapping",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module\": \"Sales\",\n  \"menu\": \"Leads\",\n  \"task\": \"Create\",\n  \"to\": [\"ops@example.com\"],\n  \"cc\": [\"manager@example.com\"],\n  \"subject\": \"New lead\",\n  \"body\": \"<p>Hello {client_name}</p>\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/email-mappings", "host": [ "{{base_url}}" ], "path": [ "api", "email-mappings" ] }
+          }
+        },
+        {
+          "name": "Get Email Mapping",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" } ],
+            "url": {
+              "raw": "{{base_url}}/api/email-mappings/{{id}}",
+              "host": [ "{{base_url}}" ],
+              "path": [ "api", "email-mappings", "{{id}}" ],
+              "variable": [ { "key": "id", "value": "1" } ]
+            }
+          }
+        },
+        {
+          "name": "Update Email Mapping",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"module\": \"Sales\",\n  \"menu\": \"Leads\",\n  \"task\": \"Create\",\n  \"to\": [\"ops@example.com\"],\n  \"cc\": [\"manager@example.com\"],\n  \"subject\": \"Updated subject\",\n  \"body\": \"<p>Updated body</p>\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/email-mappings/{{id}}",
+              "host": [ "{{base_url}}" ],
+              "path": [ "api", "email-mappings", "{{id}}" ],
+              "variable": [ { "key": "id", "value": "1" } ]
+            }
+          }
+        },
+        {
+          "name": "Delete Email Mapping",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}", "type": "text" } ],
+            "url": { "raw": "{{base_url}}/api/email-mappings/{{id}}", "host": [ "{{base_url}}" ], "path": [ "api", "email-mappings", "{{id}}" ], "variable": [ { "key": "id", "value": "1" } ] }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000" },
+    { "key": "token", "value": "" },
+    { "key": "per_page", "value": "15" },
+    { "key": "page", "value": "1" },
+    { "key": "id", "value": "1" }
+  ]
+}

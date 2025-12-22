@@ -1,0 +1,258 @@
+openapi: 3.0.3
+info:
+  title: Mail Mapper API
+  version: 1.0.0
+  description: |
+    API for managing Email Mappings (CRUD) provided by the Mail Mapper package.
+    Routes are published under the configured prefix (default: `/api`).
+servers:
+  - url: https://api.example.com
+    description: Production server (replace with your host)
+  - url: http://localhost:8000
+    description: Local development
+security:
+  - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    EmailMapping:
+      type: object
+      properties:
+        id:
+          type: integer
+        module:
+          type: string
+        menu:
+          type: string
+        task:
+          type: string
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+        subject:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        meta:
+          type: array
+          items:
+            type: string
+        last_updated_by:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EmailMappingInput:
+      type: object
+      required:
+        - module
+        - menu
+        - task
+        - to
+      properties:
+        module:
+          type: string
+          example: Sales
+        menu:
+          type: string
+          example: Leads
+        task:
+          type: string
+          example: Create
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+        subject:
+          type: string
+        body:
+          type: string
+        is_active:
+          type: boolean
+
+    PaginatedEmailMappings:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailMapping'
+        per_page:
+          type: integer
+        total:
+          type: integer
+
+    MessageDataResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        data:
+          $ref: '#/components/schemas/EmailMapping'
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: object
+
+paths:
+  /email-mappings:
+    get:
+      summary: List Email Mappings
+      description: Returns a paginated list of email mappings. Use `?per_page=` to control pagination. Set `per_page=0` to return all.
+      parameters:
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+          description: Items per page (configurable by package)
+        - in: query
+          name: page
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEmailMappings'
+      security:
+        - bearerAuth: []
+
+    post:
+      summary: Create Email Mapping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailMappingInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageDataResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /email-mappings/{id}:
+    get:
+      summary: Get Email Mapping
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Email mapping
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageDataResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    put:
+      summary: Update Email Mapping
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailMappingInput'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageDataResponse'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    delete:
+      summary: Delete Email Mapping
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []

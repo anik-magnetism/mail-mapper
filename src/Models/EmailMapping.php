@@ -40,8 +40,18 @@ class EmailMapping extends Model
      */
     public function setToAttribute($value)
     {
-        $parts = preg_split('/[,;\s]+/', $value);
-        $this->attributes['to'] = json_encode(array_map('trim', $parts));
+        if (is_array($value)) {
+            $this->attributes['to'] = json_encode($value);
+            return;
+        }
+
+        if (is_string($value)) {
+            $emails = preg_split('/[,;]/', $value);
+            $this->attributes['to'] = json_encode(array_filter($emails));
+            return;
+        }
+
+        $this->attributes['to'] = json_encode([]);
     }
 
     /**
@@ -64,8 +74,18 @@ class EmailMapping extends Model
      */
     public function setCcAttribute($value)
     {
-        $parts = preg_split('/[,;\s]+/', $value);
-        $this->attributes['cc'] = json_encode(array_map('trim', $parts));
+        if (is_array($value)) {
+            $this->attributes['cc'] = json_encode($value);
+            return;
+        }
+
+        if (is_string($value)) {
+            $emails = preg_split('/[,;]/', $value);
+            $this->attributes['cc'] = json_encode(array_filter($emails));
+            return;
+        }
+
+        $this->attributes['cc'] = json_encode([]);
     }
 
     /**

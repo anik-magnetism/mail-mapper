@@ -46,4 +46,36 @@ return [
      * This is used for relationships in the EmailMapping model.
      */
     'user_model' => config('auth.providers.users.model', \App\Models\User::class), // Change default as needed
+
+    // API settings for the package routes
+    /**
+     * Configuration settings for the Mail Mapper API routes.
+     * - 'prefix': The route prefix for all API routes.
+     * - 'version': Optional version segment for the API routes.
+     * - 'middleware': Middleware applied to the API routes.
+     * - 'per_page': Default pagination size for listing endpoints.
+     * - 'max_per_page': Maximum allowed pagination size to prevent abuse.
+     */
+    'api' => [
+        'prefix' => env('MAIL_MAPPER_API_PREFIX', 'api'),
+        'version' => env('MAIL_MAPPER_API_VERSION', null),
+        'middleware' => ['api', 'auth:api'],
+        'per_page' => env('MAIL_MAPPER_API_PER_PAGE', 15),
+        'max_per_page' => env('MAIL_MAPPER_API_MAX_PER_PAGE', 100),
+    ],
+
+    // Authorization defaults for package policies
+    /**
+     * Configuration settings for authorization related to email mapping management.
+     * - 'roles': An array of user roles that are allowed to manage email mappings. Host app can set roles (e.g. ['admin','super-admin']).
+     * - 'permissions': An array of specific permissions or gates that grant access (e.g. ['email-mapping-configure']).
+     * - 'allow_super_admin': A boolean to allow users with 'super-admin' role or permission by default.
+     * - 'default_allow': A boolean to set the default access behavior if no roles/permissions match.
+     */
+    'authorization' => [
+        'roles' => env('MAIL_MAPPER_AUTH_ROLES') ? explode(',', env('MAIL_MAPPER_AUTH_ROLES')) : [],
+        'permissions' => [],
+        'allow_super_admin' => env('MAIL_MAPPER_ALLOW_SUPER_ADMIN', true),
+        'default_allow' => false,
+    ],
 ];

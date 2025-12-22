@@ -59,12 +59,43 @@ return [
 ];
 ```
 
-or this config is usable in env file
+### Authorization Configuration
+
+The package provides configurable authorization options for the API and management UI. After publishing `config/mail-mapper.php` you can set the following under the `authorization` key (or via env variables):
+
+- `roles` — array of role names allowed to manage mappings (supports `spatie/laravel-permission` methods like `hasRole`/`hasAnyRole`). Can be set via `MAIL_MAPPER_AUTH_ROLES=admin,super-admin`.
+- `permissions` — array of permission/gate names to check via `$user->can('permission')` (e.g. `['email-mapping-configure']`).
+- `allow_super_admin` — boolean fallback to allow `super-admin` role or `super-admin-only` permission (defaults to `true`).
+- `default_allow` — boolean default if no roles/permissions match (defaults to `false`).
+
+Example configuration:
+
+```php
+'authorization' => [
+    'roles' => ['admin','super-admin'],
+    'permissions' => ['email-mapping-configure'],
+    'allow_super_admin' => true,
+    'default_allow' => false,
+],
+```
+
+Notes:
+
+- The package registers a default `EmailMappingPolicy` that respects these settings. Host applications can override the policy or adjust these config values after publishing.
+- This approach makes authorization flexible across different auth/permission packages and app conventions.
+
+### 🗒️ ENV Example:
 ```bash
-MAIL_FROM_ADDRESS="no-reply@example.com" # Default "from" email address for outgoing emails
-MAIL_FROM_NAME="No Reply"                # Default "from" name for outgoing emails
-MAIL_MAPPER_USE_RAW_FALLBACK=true        # Enable/disable raw email sending fallback (true/false)
-MAIL_MAPPER_ENABLE_LOGGING=true          # Enable/disable logging of email attachment info (true/false)
+MAIL_FROM_ADDRESS="no-reply@example.com"    # Default "from" email address for outgoing emails
+MAIL_FROM_NAME="No Reply"                   # Default "from" name for outgoing emails
+MAIL_MAPPER_USE_RAW_FALLBACK=true           # Enable/disable raw email sending fallback (true/false)
+MAIL_MAPPER_ENABLE_LOGGING=true             # Enable/disable logging of email attachment info (true/false)
+MAIL_MAPPER_API_PREFIX="api"                # The route prefix for all API routes.
+MAIL_MAPPER_API_VERSION="v1"                # Optional version segment for the API routes. It can be set as null
+MAIL_MAPPER_API_PER_PAGE=10                 # Default pagination size for listing endpoints
+MAIL_MAPPER_API_MAX_PER_PAGE=100            # Maximum allowed pagination size to prevent abuse.
+MAIL_MAPPER_AUTH_ROLES=admin,super-admin    # User roles that are allowed to manage email mappings. (e.g. admin,super-admin).
+MAIL_MAPPER_ALLOW_SUPER_ADMIN=true          # Allow users with 'super-admin' role or permission by default.
 ```
 
 ## 🧠 Core Concepts
@@ -268,6 +299,75 @@ Recommended drivers:
 - redis
 - supervisor (production)
 
+## ⚙️ **API**
+
+The package exposes a simple CRUD API for managing email mappings. Routes are published under the configured API prefix (default: `/api`) and are protected by middleware defined in `config/mail-mapper.php`.
+
+Default endpoints (prefix may include version if configured):
+
+- GET  `/email-mappings` — List mappings. Supports `?per_page=` pagination.
+- GET  `/email-mappings/{id}` — Get a single mapping.
+- POST `/email-mappings` — Create mapping (returns 201).
+- PUT  `/email-mappings/{id}` — Update mapping.
+- DELETE `/email-mappings/{id}` — Delete mapping.
+
+Authentication & Authorization:
+
+- Routes are protected by the middleware defined in `config('mail-mapper.api.middleware')` (default `['api','auth:api']`).
+- The package provides a default `EmailMappingPolicy` (registered by the service provider). Host applications should register permissions (for example `email-mapping-configure`) or override the policy to customize access control.
+
+Example: Create mapping (cURL)
+
+```bash
+curl -X POST https://your-app.test/api/email-mappings \
+    -H "Authorization: Bearer <token>" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "module":"Sales",
+        "menu":"Leads",
+        "task":"Create",
+        "to":["ops@example.com"],
+        "cc":["manager@example.com"],
+        "subject":"New lead",
+        "body":"<p>Hello {client_name}</p>",
+        "is_active": true
+    }'
+```
+
+Response example (201 Created):
+
+```json
+{
+    "message": "Email Mapping created successfully.",
+    "data": {
+        "id": 1,
+        "module": "Sales",
+        "menu": "Leads",
+        "task": "Create",
+        "to": ["ops@example.com"],
+        "cc": ["manager@example.com"],
+        "subject": "New lead",
+        "body": "<p>Hello {client_name}</p>",
+        "is_active": true,
+        "meta": [],
+        "last_updated_by": null,
+        "created_at": "2025-10-20T12:34:56Z",
+        "updated_at": "2025-10-20T12:34:56Z"
+    }
+}
+```
+
+Notes:
+
+- The list endpoint supports `?per_page=`; the default and maximum values are configurable via `config('mail-mapper.api.per_page')` and `config('mail-mapper.api.max_per_page')`.
+
+- The package includes an OpenAPI 3 specification at the project root: `openapi.yaml`.
+
+- To import into Postman: open Postman -> Import -> File -> select `openapi.yaml`.
+
+- Protect the endpoints using your preferred auth middleware (Sanctum, Passport, or `auth:api`) by publishing and editing `config/mail-mapper.php`.
+- Consider applying rate-limiting middleware (`throttle`) in your host application for public APIs.
+
 ## 🧰 Troubleshooting
 |Issue	                    |Solution|
 |:----                      |:-------|
@@ -275,7 +375,7 @@ Recommended drivers:
 |Job not running            |Run queue worker|
 |Template not rendering	    |Publish views|
 |SMTP rejects HTML	        |Enable use_raw|
-#
+
 ## 🧾 Summary
 
 Mail Mapper is a standalone Laravel package that provides a dynamic, database-driven email notification system for modular applications.
